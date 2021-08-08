@@ -157,7 +157,13 @@ void flush_stdin()
  */
 void clear_console()
 {
-  printf("\e[1;1H\e[2J");
+  #if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
+        system("clear");
+  #endif
+
+  #if defined(_WIN32) || defined(_WIN64)
+      system("cls");
+  #endif
 }
 
 /* Implement intel hex functions */
@@ -265,7 +271,7 @@ bool convert_hex_line_to_bytes(uint8_t *const line, uint8_t *array, uint16_t *re
   return true;
 }
 
-bool get_byte(uint8_t *const line, const u_int16_t start, uint8_t *byte, uint16_t *readed_bytes)
+bool get_byte(uint8_t *const line, const uint16_t start, uint8_t *byte, uint16_t *readed_bytes)
 {
   // each byte corresponding to two hex digits
   // byte ~ <hex1><hex2> --> byte = hex1 * 16 + hex2
@@ -474,7 +480,7 @@ void start_save_to_file(const IntelHexArray *obj)
 
 void start(const char *filepath)
 {
-  FILE *hexFile = open_file(filepath, "rb");
+  FILE *hexFile = open_file(filepath, "r");
 
   printf("Loading file ...\n");
   IntelHexArray obj = convert_hex_file_to_array(hexFile);
