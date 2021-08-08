@@ -1,0 +1,5 @@
+Compile: gcc -c intelhex.c -o HexDisplay
+
+RUN: ./HexDisplay <path/to/hex/file>
+
+example (on Linux): ./HexDisplay ../assets/testhex0.hex

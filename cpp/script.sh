@@ -1,0 +1,1 @@
+g++ -o execute test.cpp HexFileException.cpp HexFileReader.cpp HexDisplay.cpp
