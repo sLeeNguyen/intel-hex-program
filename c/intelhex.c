@@ -121,6 +121,13 @@ bool get_byte(uint8_t *const line, const uint16_t start, uint8_t *byte, uint16_t
  */
 bool is_data_record(Record record);
 
+/** Function to check file has .hex extension or not.
+ * 
+ * @param filename A pointer to const char*.
+ * @return A bool value. True if file is hex file, false otherwise.
+ */
+bool is_hex_file(const char *filename);
+
 /** Function to convert a string of hex digits to array of bytes.
  * 
  * @return true if convert success, otherwise returns false.
@@ -157,13 +164,13 @@ void flush_stdin()
  */
 void clear_console()
 {
-  #if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
-        system("clear");
-  #endif
+#if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
+  system("clear");
+#endif
 
-  #if defined(_WIN32) || defined(_WIN64)
-      system("cls");
-  #endif
+#if defined(_WIN32) || defined(_WIN64)
+  system("cls");
+#endif
 }
 
 /* Implement intel hex functions */
@@ -312,6 +319,16 @@ bool is_data_record(Record record)
   return record.type == DATA;
 }
 
+bool is_hex_file(const char *filename)
+{
+  // the filename must have at least 4 character (.hex)
+  int len = strlen(filename);
+  if (len < 4)
+    return false;
+
+  return !strcmp(filename + len - 4, ".hex");
+}
+
 bool validate_record(const Record record)
 {
   uint16_t aaaa = record.addr;
@@ -367,7 +384,7 @@ void display_record(const Record record)
   // ascii data cell
   for (int i = 0; i < record.len; ++i)
   {
-    printf("%c", record.data[i]);
+    printf("%c ", record.data[i]);
   }
   printf("\n");
 }
@@ -381,6 +398,12 @@ void display_hex_data(IntelHexArray const *obj, uint16_t *from)
     // if (validate_record(r) && is_data_record(r))
     if (is_data_record(r))
     {
+      if (!validate_record(r))
+      {
+        printf("%06x\t", r.addr);
+        printf("CHECKSUM ERROR");
+        exit(1);
+      }
       display_record(r);
       records_diplayed++;
     }
@@ -409,14 +432,14 @@ void start_reading_file(const IntelHexArray *obj)
     {
       do
       {
-        printf("\nPress `y` to see more 25 lines or press `n` to stop program. ");
+        printf("\nPress `y` to see more 25 lines or press `n` to stop. ");
         scanf("%c", &ans);
         flush_stdin();
       } while (ans != 'y' && ans != 'n');
     }
     else
     {
-      printf("\n=========== End of file ===========");
+      printf("\n=========== End of file ===========\n");
       getchar(); // wait user press key
       break;
     }
@@ -452,6 +475,14 @@ void start_save_to_file(const IntelHexArray *obj)
     {
       // push address
       fprintf(fptr, "%06x\t", r.addr);
+
+      // if record is invalid, then
+      // push an error and ignore data
+      if (!validate_record(r))
+      {
+        fprintf(fptr, "CHECKSUM ERROR\n");
+        continue;
+      }
 
       // push data in hex format
       for (int j = 0; j < r.len; ++j)
@@ -518,6 +549,12 @@ int main(int argc, char *argv[])
   else
   {
     printf("ERROR: Missing one parameter contains the path to hex file.");
+    exit(1);
+  }
+
+  if (!is_hex_file(filepath))
+  {
+    printf("ERROR: Only accept HEX file.");
     exit(1);
   }
 
