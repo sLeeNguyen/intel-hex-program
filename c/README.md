@@ -18,7 +18,7 @@
 - Compile
 
 ```
-	gcc -c intelhex.c -o HexDisplay
+	gcc -g intelhex.c -o HexDisplay
 ```
 
 - Run
