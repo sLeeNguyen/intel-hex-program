@@ -190,6 +190,7 @@ IntelHexArray convert_hex_file_to_array(FILE *file)
   while (fgets(line, HEX_LINE_MAX_LENGTH, file))
   {
     Record record;
+    memset(record.data, 0xff, MAX_BYTE_COUNT);
     int success = parse_intel_hex_line(line, &record);
     if (success)
     {
@@ -375,7 +376,7 @@ void display_record(const Record record)
   printf("%06x\t", record.addr);
 
   // hex data cell
-  for (int i = 0; i < record.len; ++i)
+  for (int i = 0; i < 16; ++i)
   {
     printf("%02x ", record.data[i]);
   }
@@ -384,7 +385,15 @@ void display_record(const Record record)
   // ascii data cell
   for (int i = 0; i < record.len; ++i)
   {
-    printf("%c ", record.data[i]);
+    uint8_t c = record.data[i];
+    if ((c >= 0x00 && c <= 0x1F) || c == 0x7F) // 33 control charactor
+    {
+      printf(". ");
+    }
+    else
+    {
+      printf("%c ", record.data[i]);
+    }
   }
   printf("\n");
 }
@@ -485,17 +494,33 @@ void start_save_to_file(const IntelHexArray *obj)
       }
 
       // push data in hex format
-      for (int j = 0; j < r.len; ++j)
+      for (int j = 0; j < 16; ++j)
       {
         fprintf(fptr, "%02x ", r.data[j]);
+        // if (j < r.len)
+        // {
+        //   fprintf(fptr, "%02x ", r.data[j]);
+        // }
+        // else
+        // {
+        //   fprintf(fptr, "%02x ", 0xff);
+        // }
       }
 
       fprintf(fptr, "\t");
 
       // push data in dec format
-      for (int j = 0; j < r.len; ++j)
+      for (int j = 0; j < 16; ++j)
       {
-        fprintf(fptr, "%c ", r.data[j]);
+        uint8_t c = r.data[j];
+        if ((c >= 0x00 && c <= 0x1F) || c == 0x7F) // 33 control charactor
+        {
+          fprintf(fptr, ". ");
+        }
+        else
+        {
+          fprintf(fptr, "%c ", r.data[j]);
+        }
       }
 
       fprintf(fptr, "\n");
